@@ -1,0 +1,104 @@
+version: '3.8'
+
+services:
+  database:
+    image: mysql:8
+    # restart: unless-stopped
+    configs:
+      - source: database-init
+        target: /docker-entrypoint-initdb.d/initdb.sql
+    volumes:
+      - ./log/mysql/:/var/log/
+      - database:/var/lib/mysql
+    environment:
+      - MYSQL_RANDOM_ROOT_PASSWORD
+      - MYSQL_USER
+      - MYSQL_PASSWORD
+      - TZ
+    networks:
+      - backend
+
+  app-server:
+    image: php:8-fpm-alpine
+    # restart: unless-stopped
+    configs:
+      - source: app-server-conf
+        target: /usr/local/etc/php-fpm.d/php.conf
+      - source: app-server-init
+        target: /usr/local/etc/php/php.ini
+    volumes:
+      - ./log/php/:/var/log/php/
+      - ./server/app/src/:/var/www/html/:ro
+    depends_on:
+      - database
+    networks:
+      - backend
+
+  web-server:
+    image: nginx:1.23.2-alpine
+    # restart: unless-stopped
+    configs:
+      - source: web-server-conf
+        target: /etc/nginx/nginx.conf
+    volumes:
+      - ./log/nginx/:/var/log/nginx/
+      - ./server/app/src/index.php:/var/www/html/index.php:ro
+      - ./server/app/src/view/error/:/var/www/html/view/error/:ro
+      - ./client/dist/:/var/www/html/asset/:ro
+    environment:
+      - TZ
+    ports:
+      - 80:80
+    networks:
+      - frontend
+      - backend
+    depends_on:
+      - app-server
+
+  gen-env:
+    image: python:3-alpine
+    volumes:
+      - ./:/usr/src/app/
+    working_dir: /usr/src/app/script/
+    network_mode: "none"
+    command: python generate.py
+    profiles:
+      - init
+
+  build-css:
+    image: node:19-alpine
+    user: "node"
+    volumes:
+      - ./client/config/:/home/node/app/config/:ro
+      - ./client/src/:/home/node/app/src/:ro
+      - ./client/dist/:/home/node/app/dist/
+      - ./server/app/src/view/:/home/node/app/content:ro
+    working_dir: /home/node/app/config/
+    environment:
+      - NODE_ENV=production
+    command: "npm run build"
+    profiles:
+      - init
+
+configs:
+  database-conf:
+    file: ./database/config/my.cnf
+  database-init:
+    file: ./database/config/initdb.sql
+
+  app-server-conf:
+    file: ./server/app/config/php.conf
+  app-server-init:
+    file: ./server/app/config/php.ini-production
+
+  web-server-conf:
+    file: ./server/web/config/nginx.conf
+
+networks:
+  frontend:
+    driver: bridge
+  backend:
+    driver: bridge
+
+volumes:
+  database:

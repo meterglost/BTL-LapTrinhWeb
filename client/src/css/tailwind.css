@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+    font-family: 'Roboto', sans-serif;
+}
+
+#category div:has(> i[class*="fa-"]),
+#filter div:has(> i[class*="fa-"]) {
+    @apply w-6 h-6 m-2.5 flex justify-center items-center;
+}
+
+.page-nav {
+    @apply flex flex-row gap-x-2;
+}
+
+.page-nav > * {
+    @apply w-10 h-10 rounded-md border p-1 flex justify-center items-center transition-colors hover:bg-sky-300;
+}

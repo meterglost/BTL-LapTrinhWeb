@@ -1,0 +1,8 @@
+.pdf
+
+# Project setup
+.gitignore
+.editorconfig
+
+# Nodejs
+node_modules

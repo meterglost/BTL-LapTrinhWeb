@@ -1,0 +1,15 @@
+# Environment file
+.env
+
+# DS_Store
+.DS_Store
+
+# IDE
+.vscode
+
+# Logs
+log
+*.log
+
+# Nodejs
+node_modules
